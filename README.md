@@ -353,7 +353,7 @@ Input elements not used:
 
 ## How do you set the theme within a Flutter application to ensure consistency? Did you implement a theme in your application?
 
-Yes, I implemented a theme in your application. Here’s how the theme is set up:
+Yes, I implemented a theme in the application. Here’s how the theme is set up:
 - Primary Color: The app uses Colors.deepPurple as the primary color, which is applied to the AppBar and other elements like buttons.
 - Secondary Color: A custom secondary color is set using Colors.deepPurple[400] for consistency.
 
