@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:skibishop/menu.dart';
+import 'package:skibishop/screens/menu.dart';
 
 
 void main() {

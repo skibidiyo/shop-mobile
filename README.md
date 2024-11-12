@@ -310,3 +310,56 @@ Const and final are used to declare variables that won’t change, but they have
     }
     ```
 </details>
+
+<details>
+<Summary><b>ASSIGNMENT 8</b></summary>
+
+## What is the purpose of const in Flutter? Explain the advantages of using const in Flutter code. When should we use const, and when should it not be used?
+
+Const is used to mark widgets or values as unchanging, meaning they’re created once and can’t be modified. Using const improves performance by preventing Flutter from rebuilding widgets that stay the same, which helps the app run faster and saves memory by reusing these constant widgets. We use const for widgets that don’t change, like static text, icons, or decorations, because it optimizes the code’s efficiency. However, avoid using const if the widget needs to display dynamic content or update based on user actions, as it would restrict necessary changes.
+
+## Explain and compare the usage of Column and Row in Flutter. Provide example implementations of each layout widget!
+
+Column and Row are used to arrange widgets in different directions: Column stacks them vertically, while Row lines them up horizontally. Both widgets have alignment options; mainAxisAlignment positions widgets along the main direction (up and down in Column, left to right in Row), and crossAxisAlignment positions them across the main direction (side-to-side in Column, top to bottom in Row). For example, using mainAxisAlignment.center and crossAxisAlignment.center in a Column centers text or icons both vertically and horizontally, while in a Row, mainAxisAlignment.spaceBetween spreads widgets evenly across the screen for a neat, side-by-side layout.
+
+
+## List the input elements you used on the form page in this assignment. Are there other Flutter input elements you didn’t use in this assignment? Explain!
+
+Input elements used: 
+- TextFormField: used for food, description, and price field
+
+Input elements not used:
+- DropdownButton and DropdownButtonFormField:
+
+    Allow users to select a single option from a dropdown list. DropdownButtonFormField integrates easily with forms, providing built-in validation.
+- Checkbox:
+
+    A simple checkable box, often used for yes/no or agree/disagree options. Used within lists or forms where multiple items may need individual confirmation
+- Radio:
+
+    A circular button for selecting one option out of a set of mutually exclusive options. Typically used for choices like gender or specific categories.
+- Switch:
+
+    A toggle switch for binary choices, such as enabling/disabling notifications or toggling settings. Displays as a sliding switch for simple on/off input.
+- Slider:
+
+    Allows users to select a value within a range by sliding. Often used for selecting numeric values like volume, brightness, or quantity.
+- DatePicker and TimePicker:
+
+    DatePicker shows a calendar for selecting dates, while TimePicker shows a clock for selecting times. Useful for scheduling or setting deadlines.
+- Stepper:
+
+    A control that allows users to incrementally increase or decrease a value by tapping "+" or "-". Useful for number-based fields like selecting a quantity or rating.
+
+## How do you set the theme within a Flutter application to ensure consistency? Did you implement a theme in your application?
+
+Yes, I implemented a theme in your application. Here’s how the theme is set up:
+- Primary Color: The app uses Colors.deepPurple as the primary color, which is applied to the AppBar and other elements like buttons.
+- Secondary Color: A custom secondary color is set using Colors.deepPurple[400] for consistency.
+
+## How do you manage navigation in a multi-page Flutter application?
+
+For simple navigation between pages, you can use Navigator.push to go to a new page and Navigator.pop to return, which is effective for linear navigation flows.
+
+
+</details>
