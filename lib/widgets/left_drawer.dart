@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:skibishop/screens/menu.dart';
 import 'package:skibishop/screens/foodentry_form.dart';
+import 'package:skibishop/screens/list_foodentry.dart';
+
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
@@ -63,6 +65,17 @@ class LeftDrawer extends StatelessWidget {
               );
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.add_reaction_rounded),
+            title: const Text('Food List'),
+            onTap: () {
+                // Route to the mood page
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const FoodEntryPage()),
+                );
+            },
+        ),
         ],
       ),
     );

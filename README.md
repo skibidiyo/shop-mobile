@@ -361,5 +361,28 @@ Yes, I implemented a theme in the application. Here’s how the theme is set up:
 
 For simple navigation between pages, you can use Navigator.push to go to a new page and Navigator.pop to return, which is effective for linear navigation flows.
 
-
 </details>
+
+<details>
+<Summary><b>ASSIGNMENT 9</b></summary>
+
+ ## Explain why we need to create a model to retrieve or send JSON data. Will an error occur if we don't create a model first?
+
+
+
+ ## Explain the function of the http library that you implemented for this task.
+
+
+
+ ## Explain the function of CookieRequest and why it’s necessary to share the CookieRequest instance with all components in the Flutter app.
+ ## Explain the mechanism of data transmission, from input to display in Flutter.
+
+
+
+ ## Explain the authentication mechanism from login, register, to logout. Start from inputting account data in Flutter to Django’s completion of the authentication process and display of the menu in Flutter.
+
+
+ 
+ ## Explain how you implement the checklist above step by step! (not just following the tutorial)
+
+ </details>
