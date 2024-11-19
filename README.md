@@ -366,23 +366,747 @@ For simple navigation between pages, you can use Navigator.push to go to a new p
 <details>
 <Summary><b>ASSIGNMENT 9</b></summary>
 
- ## Explain why we need to create a model to retrieve or send JSON data. Will an error occur if we don't create a model first?
+## Explain why we need to create a model to retrieve or send JSON data. Will an error occur if we don't create a model first?
+Creating models for handling JSON data in Django and Flutter/Dart is not just a best practice but a necessity for building robust, maintainable, and scalable applications. Models provide structure, enforce data integrity, facilitate seamless data exchange between the backend and frontend, and significantly reduce the likelihood of errors. Skipping the creation of models can lead to a fragile codebase, increased bugs, and a more challenging development process
+
+## Explain the function of the http library that you implemented for this task.
+The http library in Flutter/Dart facilitates communication with servers by handling HTTP requests and responses. It supports methods like GET (fetch data), POST (send data).
+
+## Explain the function of CookieRequest and why it’s necessary to share the CookieRequest instance with all components in the Flutter app.
+CookieRequest is essential for managing sessions, cookies, and stateful communication in a Flutter app. Sharing a single instance ensures consistent, secure, and seamless interaction with the backend while reducing complexity and avoiding duplicate sessions. It is critical for apps requiring authenticated user flows or personalized features.
+
+## Explain the mechanism of data transmission, from input to display in Flutter.
+When a user interacts with the Flutter app, such as by submitting a form or clicking a button, the app sends a network request (e.g., GET or POST) to the Django backend using the http or CookieRequest library. Django handles the request by retrieving or updating data and responds with a JSON response. Flutter then converts the JSON into Dart objects using a model for easier data handling. The processed data is displayed on the user interface through widgets like ListView or FutureBuilder.
+
+## Explain the authentication mechanism from login, register, to logout. Start from inputting account data in Flutter to Django’s completion of the authentication process and display of the menu in Flutter.
+During registration, Flutter sends user data to Django, which validates it and creates an account. For login, Flutter submits credentials to Django, which verifies them and returns a session cookie or token for authentication. Flutter stores this securely and includes it in subsequent requests to access protected resources. Logout involves Flutter requesting Django to invalidate the session or token, after which Flutter clears stored credentials and redirects the user to the login screen. Django handles validation and session management, while Flutter ensures smooth user interaction.
+
+## Explain how you implement the checklist above step by step! (not just following the tutorial)
+- Setting up the authentication for the flutter project
+    - In the django project create a new app called authentication.
+    - Create a function for login, register and log out in the views.py.
+        ```
+        from django.contrib.auth import authenticate, login as auth_login
+        from django.http import JsonResponse
+        from django.views.decorators.csrf import csrf_exempt
+        from django.contrib.auth.models import User
+        import json
+        from django.contrib.auth import logout as auth_logout
 
 
+        @csrf_exempt
+        def login(request):
+            username = request.POST['username']
+            password = request.POST['password']
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                if user.is_active:
+                    auth_login(request, user)
+                    # Successful login status.
+                    return JsonResponse({
+                        "username": user.username,
+                        "status": True,
+                        "message": "Login successful!"
+                        # Add other data if you want to send data to Flutter.
+                    }, status=200)
+                else:
+                    return JsonResponse({
+                        "status": False,
+                        "message": "Login failed, account disabled."
+                    }, status=401)
 
- ## Explain the function of the http library that you implemented for this task.
+            else:
+                return JsonResponse({
+                    "status": False,
+                    "message": "Login failed, check email or password again."
+                }, status=401)
+            
+        @csrf_exempt
+        def register(request):
+            if request.method == 'POST':
+                data = json.loads(request.body)
+                username = data['username']
+                password1 = data['password1']
+                password2 = data['password2']
 
+                # Check if the passwords match
+                if password1 != password2:
+                    return JsonResponse({
+                        "status": False,
+                        "message": "Passwords do not match."
+                    }, status=400)
 
+                # Check if the username is already taken
+                if User.objects.filter(username=username).exists():
+                    return JsonResponse({
+                        "status": False,
+                        "message": "Username already exists."
+                    }, status=400)
 
- ## Explain the function of CookieRequest and why it’s necessary to share the CookieRequest instance with all components in the Flutter app.
- ## Explain the mechanism of data transmission, from input to display in Flutter.
+                # Create the new user
+                user = User.objects.create_user(username=username, password=password1)
+                user.save()
 
+                return JsonResponse({
+                    "username": user.username,
+                    "status": 'success',
+                    "message": "User created successfully!"
+                }, status=200)
 
+            else:
+                return JsonResponse({
+                    "status": False,
+                    "message": "Invalid request method."
+                }, status=400)
+            
+        @csrf_exempt
+        def logout(request):
+            username = request.user.username
 
- ## Explain the authentication mechanism from login, register, to logout. Start from inputting account data in Flutter to Django’s completion of the authentication process and display of the menu in Flutter.
+            try:
+                auth_logout(request)
+                return JsonResponse({
+                    "username": username,
+                    "status": True,
+                    "message": "Logged out successfully!"
+                }, status=200)
+            except:
+                return JsonResponse({
+                "status": False,
+                "message": "Logout failed."
+                }, status=401)
+        ```
+    - Add URL routing to the function created.
+        ```
+        from django.urls import path
+        from authentication.views import login, register
+        from authentication.views import logout
 
+        app_name = 'authentication'
 
- 
- ## Explain how you implement the checklist above step by step! (not just following the tutorial)
+        urlpatterns = [
+            path('login/', login, name='login'),
+            path('register/', register, name='register'),
+            path('logout/', logout, name='logout'),
 
+        ]
+        ```
+    - Add path('auth/', include('authentication.urls')), in the skibishop/urls.py.
+
+- Integrate Authentication System in Flutter
+    - Install the package provided by the teaching assistant team by running the following commands in the Terminal.
+        ```
+        flutter pub add provider
+        flutter pub add pbp_django_auth
+        ```
+    - Modify the root widget in the main.dart.
+        ```
+        class MyApp extends StatelessWidget {
+        const MyApp({super.key});
+
+        @override
+        Widget build(BuildContext context) {
+            return Provider(
+            create: (_) {
+                CookieRequest request = CookieRequest();
+                return request;
+            },
+            child: MaterialApp(
+                title: 'Mental Health Tracker',
+                theme: ThemeData(
+                useMaterial3: true,
+                colorScheme: ColorScheme.fromSwatch(
+                    primarySwatch: Colors.deepPurple,
+                ).copyWith(secondary: Colors.deepPurple[400]),
+                ),
+                home: MyHomePage(),
+            ),
+            );
+        }
+        } 
+        ```
+    - Create a new file in the screens folder named login.dart and register.dart.
+    - Add the following code to the login.dart file
+        ```
+        import 'package:skibishop/screens/menu.dart';
+        import 'package:flutter/material.dart';
+        import 'package:skibishop/screens/register.dart';
+        import 'package:pbp_django_auth/pbp_django_auth.dart';
+        import 'package:provider/provider.dart';
+        // TODO: Import RegisterPage later
+
+        void main() {
+        runApp(const LoginApp());
+        }
+        class LoginApp extends StatelessWidget {
+        const LoginApp({super.key});
+        @override
+        Widget build(BuildContext context) {
+            return MaterialApp(
+            title: 'Login',
+            theme: ThemeData(
+                useMaterial3: true,
+                colorScheme: ColorScheme.fromSwatch(
+                primarySwatch: Colors.deepPurple,
+                ).copyWith(secondary: Colors.deepPurple[400]),
+            ),
+            home: const LoginPage(),
+            );
+        }
+        }
+        class LoginPage extends StatefulWidget {
+        const LoginPage({super.key});
+        @override
+        State<LoginPage> createState() => _LoginPageState();
+        }
+        class _LoginPageState extends State<LoginPage> {
+        final TextEditingController _usernameController = TextEditingController();
+        final TextEditingController _passwordController = TextEditingController();
+        @override
+        Widget build(BuildContext context) {
+            final request = context.watch<CookieRequest>();
+            return Scaffold(
+            appBar: AppBar(
+                title: const Text('Login'),
+            ),
+            body: Center(
+                child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Card(
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                        const Text(
+                            'Login',
+                            style: TextStyle(
+                            fontSize: 24.0,
+                            fontWeight: FontWeight.bold,
+                            ),
+                        ),
+                        const SizedBox(height: 30.0),
+                        TextField(
+                            controller: _usernameController,
+                            decoration: const InputDecoration(
+                            labelText: 'Username',
+                            hintText: 'Enter your username',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                            ),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                            ),
+                        ),
+                        const SizedBox(height: 12.0),
+                        TextField(
+                            controller: _passwordController,
+                            decoration: const InputDecoration(
+                            labelText: 'Password',
+                            hintText: 'Enter your password',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                            ),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                            ),
+                            obscureText: true,
+                        ),
+                        const SizedBox(height: 24.0),
+                        ElevatedButton(
+                            onPressed: () async {
+                            String username = _usernameController.text;
+                            String password = _passwordController.text;
+                // Check credentials
+                // TODO: Change the URL and don't forget to add a trailing slash (/) at the end of the URL!
+                // To connect the Android emulator to Django on localhost,
+                // use the URL http://10.0.2.2/
+                            final response = await request
+                                .login("http://127.0.0.1:8000/auth/login/", {
+                                'username': username,
+                                'password': password,
+                            });
+                            if (request.loggedIn) {
+                                String message = response['message'];
+                                String uname = response['username'];
+                                if (context.mounted) {
+                                Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => MyHomePage()),
+                                );
+                                ScaffoldMessenger.of(context)
+                                    ..hideCurrentSnackBar()
+                                    ..showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text("$message Welcome, $uname.")),
+                                    );
+                                }
+                            } else {
+                                if (context.mounted) {
+                                showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                    title: const Text('Login Failed'),
+                                    content: Text(response['message']),
+                                    actions: [
+                                        TextButton(
+                                        child: const Text('OK'),
+                                        onPressed: () {
+                                            Navigator.pop(context);
+                                        },
+                                        ),
+                                    ],
+                                    ),
+                                );
+                                }
+                            }
+                            },
+                            style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            minimumSize: Size(double.infinity, 50),
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            ),
+                            child: const Text('Login'),
+                        ),
+                        const SizedBox(height: 36.0),
+                        GestureDetector(
+                            onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const RegisterPage()),
+                            );
+                            },
+                            child: Text(
+                            'Don\'t have an account? Register',
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontSize: 16.0,
+                            ),
+                            ),
+                        ),
+                        ],
+                    ),
+                    ),
+                ),
+                ),
+            ),
+            );
+        }
+        }
+
+        ```
+    - Add the following code to register.dart:
+        ```
+        import 'dart:convert';
+        import 'package:flutter/material.dart';
+        import 'package:skibishop/screens/login.dart';
+        import 'package:pbp_django_auth/pbp_django_auth.dart';
+        import 'package:provider/provider.dart';
+
+        class RegisterPage extends StatefulWidget {
+        const RegisterPage({super.key});
+
+        @override
+        State<RegisterPage> createState() => _RegisterPageState();
+        }
+
+        class _RegisterPageState extends State<RegisterPage> {
+        final _usernameController = TextEditingController();
+        final _passwordController = TextEditingController();
+        final _confirmPasswordController = TextEditingController();
+
+        @override
+        Widget build(BuildContext context) {
+            final request = context.watch<CookieRequest>();
+            return Scaffold(
+            appBar: AppBar(
+                title: const Text('Register'),
+                leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                    Navigator.pop(context);
+                },
+                ),
+            ),
+            body: Center(
+                child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Card(
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                        const Text(
+                            'Register',
+                            style: TextStyle(
+                            fontSize: 24.0,
+                            fontWeight: FontWeight.bold,
+                            ),
+                        ),
+                        const SizedBox(height: 30.0),
+                        TextFormField(
+                            controller: _usernameController,
+                            decoration: const InputDecoration(
+                            labelText: 'Username',
+                            hintText: 'Enter your username',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                            ),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                            ),
+                            validator: (value) {
+                            if (value == null || value.isEmpty) {
+                                return 'Please enter your username';
+                            }
+                            return null;
+                            },
+                        ),
+                        const SizedBox(height: 12.0),
+                        TextFormField(
+                            controller: _passwordController,
+                            decoration: const InputDecoration(
+                            labelText: 'Password',
+                            hintText: 'Enter your password',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                            ),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                            ),
+                            obscureText: true,
+                            validator: (value) {
+                            if (value == null || value.isEmpty) {
+                                return 'Please enter your password';
+                            }
+                            return null;
+                            },
+                        ),
+                        const SizedBox(height: 12.0),
+                        TextFormField(
+                            controller: _confirmPasswordController,
+                            decoration: const InputDecoration(
+                            labelText: 'Confirm Password',
+                            hintText: 'Confirm your password',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                            ),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                            ),
+                            obscureText: true,
+                            validator: (value) {
+                            if (value == null || value.isEmpty) {
+                                return 'Please confirm your password';
+                            }
+                            return null;
+                            },
+                        ),
+                        const SizedBox(height: 24.0),
+                        ElevatedButton(
+                            onPressed: () async {
+                            String username = _usernameController.text;
+                            String password1 = _passwordController.text;
+                            String password2 = _confirmPasswordController.text;
+
+                            // Check credentials
+                            // TODO: Change the url, don't forget to add a slash (/) inthe end of the URL!
+                            // To connect Android emulator with Django on localhost,
+                            // use the URL http://10.0.2.2/
+                            final response = await request.postJson(
+                                "http://127.0.0.1:8000/auth/register/",
+                                jsonEncode({
+                                    "username": username,
+                                    "password1": password1,
+                                    "password2": password2,
+                                }));
+                            if (context.mounted) {
+                                if (response['status'] == 'success') {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                    content: Text('Successfully registered!'),
+                                    ),
+                                );
+                                Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const LoginPage()),
+                                );
+                                } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                    content: Text('Failed to register!'),
+                                    ),
+                                );
+                                }
+                            }
+                            },
+                            style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            minimumSize: Size(double.infinity, 50),
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            ),
+                            child: const Text('Register'),
+                        ),
+                        ],
+                    ),
+                    ),
+                ),
+                ),
+            ),
+            );
+        }
+        }
+        ```
+
+- Create a custom model according to the Django application project.
+    - Create a new file under the models/ folder in the subdirectory lib/ with the name food_entry.dart, fill it with this code
+        ```
+        // To parse this JSON data, do
+        //
+        //     final moodEntry = moodEntryFromJson(jsonString);
+
+        import 'dart:convert';
+
+        List<FoodEntry> foodEntryFromJson(String str) => List<FoodEntry>.from(json.decode(str).map((x) => FoodEntry.fromJson(x)));
+
+        String foodEntryToJson(List<FoodEntry> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+        
+        class FoodEntry {
+            String model;
+            String pk;
+            Fields fields;
+
+            FoodEntry({
+                required this.model,
+                required this.pk,
+                required this.fields,
+            });
+
+            factory FoodEntry.fromJson(Map<String, dynamic> json) => FoodEntry(
+                model: json["model"],
+                pk: json["pk"],
+                fields: Fields.fromJson(json["fields"]),
+            );
+
+            Map<String, dynamic> toJson() => {
+                "model": model,
+                "pk": pk,
+                "fields": fields.toJson(),
+            };
+        }
+
+        class Fields {
+            int user;
+            String name;
+            String description;
+            int price;
+
+            Fields({
+                required this.user,
+                required this.name,
+                required this.description,
+                required this.price,
+            });
+
+            factory Fields.fromJson(Map<String, dynamic> json) => Fields(
+                user: json["user"],
+                name: json["name"],
+                description: json["description"],
+                price: json["price"],
+            );
+
+            Map<String, dynamic> toJson() => {
+                "user": user,
+                "name": name,
+                "description": description,
+                "price": price,
+            };
+        }
+        ```        
+- Fetch Data from Django and Show Data in the Flutter App
+    - Run flutter pub add http in the Flutter project
+    - In the file android/app/src/main/AndroidManifest.xml, add this code to allow your Flutter app to access the internet.
+        ```
+        ...
+        <application>
+        ...
+        </application>
+        <!-- Required to fetch data from the Internet. -->
+        <uses-permission android:name="android.permission.INTERNET" />
+        ...
+        ```
+    - Create a new file in the lib/screens directory with name list_foodentry.dart and fill it with this code
+        ```
+        import 'package:flutter/material.dart';
+        import 'package:pbp_django_auth/pbp_django_auth.dart';
+        import 'package:provider/provider.dart';
+        import 'package:skibishop/models/food_entry.dart';
+        import 'package:skibishop/widgets/left_drawer.dart';
+        import 'package:skibishop/widgets/food_details.dart';
+
+        class FoodEntryPage extends StatefulWidget {
+        const FoodEntryPage({super.key});
+
+        @override
+        State<FoodEntryPage> createState() => _FoodEntryPageState();
+        }
+
+        class _FoodEntryPageState extends State<FoodEntryPage> {
+        Future<List<FoodEntry>> fetchFood(CookieRequest request) async {
+            // TODO: Don't forget to add the trailing slash (/) at the end of the URL!
+            final response = await request.get('http://127.0.0.1:8000/json/');
+            
+            // Decoding the response into JSON
+            var data = response;
+            
+            // Convert json data to a Product object
+            List<FoodEntry> listFood = [];
+            for (var d in data) {
+            if (d != null) {
+                listFood.add(FoodEntry.fromJson(d));
+            }
+            }
+            return listFood;
+        }
+        
+        @override
+        Widget build(BuildContext context) {
+            final request = context.watch<CookieRequest>();
+            return Scaffold(
+            appBar: AppBar(
+                title: const Text('Food List'),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+            ),
+            drawer: const LeftDrawer(),
+            body: FutureBuilder(
+                future: fetchFood(request),
+                builder: (context, AsyncSnapshot snapshot) {
+                if (snapshot.data == null) {
+                    return const Center(child: CircularProgressIndicator());
+                } else {
+                    if (!snapshot.hasData) {
+                    return const Column(
+                        children: [
+                        Text(
+                            'There is no product data in SKIBISHOP',
+                            style: TextStyle(fontSize: 20, color: Color(0xff59A5D8)),
+                        ),
+                        SizedBox(height: 8),
+                        ],
+                    );
+                    } else {
+                    return ListView.builder(
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                        final foodEntry = snapshot.data![index];
+                        return InkWell(
+                            onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                builder: (context) => FoodDetailsPage(foodEntry: foodEntry),
+                                ),
+                            );
+                            },
+                            child: Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Container(
+                                decoration: BoxDecoration(
+                                border: Border.all(
+                                    color: Colors.grey, // Color of the border
+                                    width: 1, // Width of the border
+                                ),
+                                borderRadius: BorderRadius.circular(12), // Border radius of the container
+                                ),
+                                padding: const EdgeInsets.all(20.0),
+                                child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                    Text(
+                                    "${snapshot.data![index].fields.name}",
+                                    style: const TextStyle(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.bold,
+                                    ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text("${snapshot.data![index].fields.description}"),
+                                    const SizedBox(height: 10),
+                                    Text("${snapshot.data![index].fields.price}"),
+                                ],
+                                ),
+                            ),
+                            ),
+                        );
+                        },
+                    );
+                    }
+                }
+                },
+            ),
+            );
+        }
+        }
+        ```
+- Create a detail page for each item listed on the Product list page.
+    - Create a new dart file named food_details in lib/widgets/
+    - Add the following code to the file
+        ```
+        import 'package:flutter/material.dart'; 
+        import 'package:skibishop/models/food_entry.dart'; 
+
+        class FoodDetailsPage extends StatelessWidget {
+        final FoodEntry foodEntry;
+        const FoodDetailsPage({super.key, required this.foodEntry});
+        @override
+        Widget build(BuildContext context) {
+            return Scaffold(
+            appBar: AppBar(
+                title: Text(foodEntry.fields.name), 
+                centerTitle: true,
+                actions: <Widget>[
+                IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: () => Navigator.pop(context), 
+                ),
+                ], // Widget[]
+            ), // AppBar
+            body: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                    Text(
+                    foodEntry.fields.name,
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ), // Text
+                    const SizedBox(height: 10),
+                    Text("Description: ${foodEntry.fields.description}", style: const TextStyle(fontSize: 16)),
+                    const SizedBox(height: 10),
+                    Text("Price: ${foodEntry.fields.price}", style: const TextStyle(fontSize: 16)),
+                    const SizedBox(height: 10),
+                ],
+                ),
+            ),
+            );
+        }
+        }
+        ```
  </details>

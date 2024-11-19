@@ -7,7 +7,7 @@ import 'dart:convert';
 List<FoodEntry> foodEntryFromJson(String str) => List<FoodEntry>.from(json.decode(str).map((x) => FoodEntry.fromJson(x)));
 
 String foodEntryToJson(List<FoodEntry> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
-
+  
 class FoodEntry {
     String model;
     String pk;
